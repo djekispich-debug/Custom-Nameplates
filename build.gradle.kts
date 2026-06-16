@@ -3,8 +3,31 @@ plugins {
     id("com.gradleup.shadow") version "9.4.1"
 }
 
-val git : String = versionBanner()
-val builder : String = builder()
+// ⬇️ ИСПРАВЛЕННЫЕ ФУНКЦИИ ⬇️
+fun versionBanner(): String {
+    return try {
+        val process = Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short=8", "HEAD"))
+        val output = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        if (process.exitValue() == 0) output else "Unknown"
+    } catch (e: Exception) {
+        System.getenv("GITHUB_SHA")?.take(8) ?: "Unknown"
+    }
+}
+
+fun builder(): String {
+    return try {
+        val process = Runtime.getRuntime().exec(arrayOf("git", "config", "user.name"))
+        val output = process.inputStream.bufferedReader().readText().trim()
+        process.waitFor()
+        if (process.exitValue() == 0) output else "Unknown"
+    } catch (e: Exception) {
+        System.getenv("GITHUB_ACTOR") ?: "Unknown"
+    }
+}
+
+val git: String = versionBanner()
+val builder: String = builder()
 ext["git_version"] = git
 ext["builder"] = builder
 
@@ -19,16 +42,10 @@ subprojects {
     tasks.processResources {
         filteringCharset = "UTF-8"
 
-        // ⬇️ ЯВНО УКАЗЫВАЕМ plugin.yml
-        filesMatching("plugin.yml") {
-            expand(rootProject.properties)
-        }
-
         filesMatching("custom-nameplates.properties") {
             expand(rootProject.properties)
         }
 
-        // Для остальных YML
         filesMatching(listOf("*.yml", "*/*.yml")) {
             expand(
                 Pair("project_version", rootProject.properties["project_version"]!!),
@@ -36,20 +53,4 @@ subprojects {
             )
         }
     }
-
-    // ⬇️ ВАЖНО: Чтобы plugin.yml попал в JAR
-    tasks.shadowJar {
-        // Не удаляем plugin.yml
-        exclude("META-INF/*.SF")
-        exclude("META-INF/*.DSA")
-        exclude("META-INF/*.RSA")
-    }
 }
-
-fun versionBanner(): String = project.providers.exec {
-    commandLine("git", "rev-parse", "--short=8", "HEAD")
-}.standardOutput.asText.map { it.trim() }.getOrElse("Unknown")
-
-fun builder(): String = project.providers.exec {
-    commandLine("git", "config", "user.name")
-}.standardOutput.asText.map { it.trim() }.getOrElse("Unknown")
