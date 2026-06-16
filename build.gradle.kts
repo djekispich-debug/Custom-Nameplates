@@ -19,16 +19,30 @@ subprojects {
     tasks.processResources {
         filteringCharset = "UTF-8"
 
-        filesMatching(arrayListOf("custom-nameplates.properties")) {
+        // ⬇️ ЯВНО УКАЗЫВАЕМ plugin.yml
+        filesMatching("plugin.yml") {
             expand(rootProject.properties)
         }
 
-        filesMatching(arrayListOf("*.yml", "*/*.yml")) {
+        filesMatching("custom-nameplates.properties") {
+            expand(rootProject.properties)
+        }
+
+        // Для остальных YML
+        filesMatching(listOf("*.yml", "*/*.yml")) {
             expand(
                 Pair("project_version", rootProject.properties["project_version"]!!),
                 Pair("config_version", rootProject.properties["config_version"]!!)
             )
         }
+    }
+
+    // ⬇️ ВАЖНО: Чтобы plugin.yml попал в JAR
+    tasks.shadowJar {
+        // Не удаляем plugin.yml
+        exclude("META-INF/*.SF")
+        exclude("META-INF/*.DSA")
+        exclude("META-INF/*.RSA")
     }
 }
 
