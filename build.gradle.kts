@@ -3,7 +3,6 @@ plugins {
     id("com.gradleup.shadow") version "9.4.1"
 }
 
-// ⬇️ ИСПРАВЛЕННЫЕ ФУНКЦИИ ⬇️
 fun versionBanner(): String {
     return try {
         val process = Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short=8", "HEAD"))
@@ -41,6 +40,9 @@ subprojects {
 
     tasks.processResources {
         filteringCharset = "UTF-8"
+        
+        // ⬇️⬇️⬇️ ГЛАВНОЕ ИСПРАВЛЕНИЕ ⬇️⬇️⬇️
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
 
         filesMatching("custom-nameplates.properties") {
             expand(rootProject.properties)
